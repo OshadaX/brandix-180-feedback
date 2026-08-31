@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>180° Feedback Report Compiler</title>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- CSS -->
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+    <div class="app-wrapper">
+        <header class="app-header">
+            <div class="logo-badge">SYSTEM PORTAL</div>
+            <h1>180° Feedback Compiler</h1>
+            <p class="subtitle">Securely convert and generate multi-rater performance feedback reports instantly.</p>
+        </header>
+
+        <main class="main-content">
+            <!-- Upload Box Card -->
+            <div class="card upload-card" id="dropZone">
+                <div class="upload-icon-container">
+                    <svg class="upload-svg" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 13h6m-3-3v6m-9 1V4a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+                    </svg>
+                </div>
+                <h2>Upload Evaluation Spreadsheet</h2>
+                <p>Drag and drop your <code>.xlsx</code> template here, or click to browse files</p>
+                <input type="file" id="excelFile" accept=".xlsx" onchange="handleExcelUpload(event)">
+            </div>
+
+            <!-- Parsed Metadata Card -->
+            <div class="card status-card" id="statusCard" style="display: none;">
+                <div class="status-header">
+                    <span class="status-dot-pulse"></span>
+                    <h3>Evaluation Loaded Successfully</h3>
+                </div>
+                
+                <div class="metadata-grid">
+                    <div class="meta-item">
+                        <span class="meta-label">Student Name</span>
+                        <span class="meta-value" id="lblStudentName">-</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label">Designation</span>
+                        <span class="meta-value" id="lblDesignation">-</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label">Department / Unit</span>
+                        <span class="meta-value" id="lblDepartment">-</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label">Evaluation Period</span>
+                        <span class="meta-value" id="lblPeriod">-</span>
+                    </div>
+                </div>
+                
+                <div class="status-actions">
+                    <button class="btn btn-success btn-large" onclick="generatePdfReport()">
+                        <span class="btn-text">Download PDF Report</span>
+                        <span class="btn-icon">→</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Accordion Visual Editor (Optional & Collapsed by default) -->
+            <div class="accordion-section" id="editorAccordion" style="display: none;">
+                <button class="accordion-toggle" onclick="toggleAccordion()">
+                    <span>Inspect / Edit Evaluation Data (Optional)</span>
+                    <span class="toggle-icon">▼</span>
+                </button>
+                
+                <div class="accordion-content" id="accordionContent">
+                    <form id="evalForm">
+                        <div class="profile-grid">
+                            <div class="form-group">
+                                <label for="student_name">Student Name</label>
+                                <input type="text" id="student_name" name="student_name">
+                            </div>
+                            <div class="form-group">
+                                <label for="designation">Designation</label>
+                                <input type="text" id="designation" name="designation">
+                            </div>
+                            <div class="form-group">
+                                <label for="department">Department</label>
+                                <input type="text" id="department" name="department">
+                            </div>
+                            <div class="form-group">
+                                <label for="period">Period</label>
+                                <input type="text" id="period" name="period">
+                            </div>
+                            <div class="form-group">
+                                <label for="supervisor_name">Supervisor</label>
+                                <input type="text" id="supervisor_name" name="supervisor_name">
+                            </div>
+                        </div>
+
+                        <div class="tabs-container">
+                            <div class="comp-nav" id="compNav"></div>
+                            <div class="questions-content" id="questionsContent"></div>
+                        </div>
+
+                        <div class="qualitative-panel">
+                            <h2>Qualitative Feedback</h2>
+                            <div class="panel-divider"></div>
+                            <div id="qualContent"></div>
+                        </div>
+
+                        <div class="actions-bar">
+                            <button type="button" class="btn btn-outline" onclick="downloadExcelTemplate()">Export Excel Data</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Beautiful Converting Overlay Loader -->
+    <div class="loader-overlay" id="loaderOverlay" style="display: none;">
+        <div class="loader-card">
+            <div class="loader-ring">
+                <div></div><div></div><div></div><div></div>
+            </div>
+            <h2>Processing Report</h2>
+            <p id="loaderStep">Analyzing Excel spreadsheet...</p>
+            <div class="progress-bar-container">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden Charts Rendering -->
+    <div id="canvas-container" style="position: absolute; left: -9999px; top: -9999px;">
+        <canvas id="radarCanvas" width="800" height="800"></canvas>
+        <canvas id="barCanvas" width="700" height="350"></canvas>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
