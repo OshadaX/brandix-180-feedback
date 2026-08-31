@@ -1,0 +1,10 @@
+# Private employee data - never commit these
+*.xlsx
+*.pdf
+*.docx
+
+# macOS system files
+.DS_Store
+
+# Local development
+*.log
