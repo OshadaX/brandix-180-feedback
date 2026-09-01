@@ -69,6 +69,34 @@
                 </div>
             </div>
 
+            <!-- AI Copilot & Insights Section (Dashboard Cards) -->
+            <div class="card ai-insights-card" id="aiInsightsCard" style="display: none;">
+                <div class="ai-header">
+                    <div class="ai-title-wrap">
+                        <div class="ai-spark-icon">✨</div>
+                        <div>
+                            <h3>AI Performance Coach & Actionable Suggestions</h3>
+                            <p class="ai-subtitle">Instant analysis derived from self, supervisor & peer evaluations.</p>
+                        </div>
+                    </div>
+                    <button class="btn btn-outline-primary btn-sm" onclick="openChatWithPrompt('Give me a detailed summary of my evaluation')">
+                        💬 Ask AI Coach
+                    </button>
+                </div>
+
+                <div class="insights-summary-grid" id="insightsSummaryGrid">
+                    <!-- Dynamic insights badges and summary cards injected by JS -->
+                </div>
+
+                <div class="quick-prompts-bar">
+                    <span class="quick-prompts-label">Quick Suggestions:</span>
+                    <button class="prompt-chip" onclick="openChatWithPrompt('What are my top strengths and how to leverage them?')">💪 Top Strengths</button>
+                    <button class="prompt-chip" onclick="openChatWithPrompt('What are my critical blind spots between Self vs Supervisor?')">🔍 Blind Spots</button>
+                    <button class="prompt-chip" onclick="openChatWithPrompt('Give me a 30-day action plan to improve low scoring areas')">🎯 30-Day Growth Plan</button>
+                    <button class="prompt-chip" onclick="openChatWithPrompt('Generate ready-to-use 1-on-1 discussion talking points')">🗣️ 1-on-1 Discussion</button>
+                </div>
+            </div>
+
             <!-- Accordion Visual Editor (Optional & Collapsed by default) -->
             <div class="accordion-section" id="editorAccordion" style="display: none;">
                 <button class="accordion-toggle" onclick="toggleAccordion()">
@@ -131,6 +159,72 @@
             <p id="loaderStep">Analyzing Excel spreadsheet...</p>
             <div class="progress-bar-container">
                 <div class="progress-bar" id="progressBar"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating AI Chatbot Widget -->
+    <div class="chatbot-widget-container" id="chatbotWidget">
+        <!-- Floating Trigger Button -->
+        <button class="chat-trigger-btn" id="chatTriggerBtn" onclick="toggleChatWidget()" title="Chat with 180° AI Coach">
+            <span class="chat-btn-icon">💬</span>
+            <span class="chat-badge" id="chatNotificationBadge">AI</span>
+        </button>
+
+        <!-- Chat Window Window / Panel -->
+        <div class="chat-window" id="chatWindow">
+            <div class="chat-header">
+                <div class="chat-header-info">
+                    <div class="chat-avatar">🤖</div>
+                    <div>
+                        <div class="chat-bot-title">180° AI Copilot & Coach</div>
+                        <div class="chat-bot-status"><span class="online-indicator"></span> Ready to analyze & assist</div>
+                    </div>
+                </div>
+                <div class="chat-header-actions">
+                    <button class="chat-action-icon-btn" id="chatFullscreenBtn" onclick="toggleChatFullscreen()" title="Toggle Fullscreen">⛶</button>
+                    <button class="chat-action-icon-btn" onclick="clearChatHistory()" title="Clear Chat">🗑️</button>
+                    <button class="chat-action-icon-btn" onclick="toggleChatWidget()" title="Minimize">✖</button>
+                </div>
+            </div>
+
+            <!-- Chat Messages Log Area -->
+            <div class="chat-messages" id="chatMessages">
+                <div class="chat-bubble bot-bubble">
+                    <div class="bubble-content">
+                        <strong>Hello! 👋 I'm your 180° Evaluation AI Coach.</strong>
+                        <p>I can help you with:</p>
+                        <ul>
+                            <li>📁 <strong>Upload & Parse Excel</strong> directly inside this chat</li>
+                            <li>📊 <strong>Analyze Competency Strengths & Blind Spots</strong></li>
+                            <li>💡 <strong>Give actionable developmental suggestions</strong></li>
+                            <li>📄 <strong>Generate and download your official PDF Report</strong></li>
+                        </ul>
+                        <p style="margin-top: 8px; font-size: 12px; color: var(--text-muted);">Drop or upload your <code>.xlsx</code> file below or click a quick prompt to get started!</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat Suggestions / Quick Action Chips -->
+            <div class="chat-quick-actions" id="chatQuickActions">
+                <button class="quick-chip" onclick="handleQuickChipClick('analyze')">📊 Analyze My Scores</button>
+                <button class="quick-chip" onclick="handleQuickChipClick('strengths')">⭐ Key Strengths</button>
+                <button class="quick-chip" onclick="handleQuickChipClick('weaknesses')">⚠️ Areas to Improve</button>
+                <button class="quick-chip" onclick="handleQuickChipClick('pdf')">📄 Create PDF Report</button>
+            </div>
+
+            <!-- Chat Input Area -->
+            <div class="chat-input-container">
+                <input type="file" id="chatFileInput" accept=".xlsx" style="display: none;" onchange="handleChatFileUpload(event)">
+                <button class="chat-file-btn" onclick="document.getElementById('chatFileInput').click()" title="Attach & parse Excel evaluation">
+                    📎
+                </button>
+                <input type="text" id="chatUserInput" placeholder="Ask about strengths, blind spots, or type 'generate pdf'..." onkeydown="handleChatInputKey(event)">
+                <button class="chat-send-btn" id="chatSendBtn" onclick="sendChatMessage()" title="Send">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M12 5l7 7-7 7"/>
+                    </svg>
+                </button>
             </div>
         </div>
     </div>

@@ -245,7 +245,7 @@ window.handleExcelUpload = function(event) {
 // core file handler
 function handleExcelFile(file) {
     const reader = new FileReader();
-    reader.onload = function(e) {
+    reader.onload = async function(e) {
         const data = new Uint8Array(e.target.result);
         const workbook = XLSX.read(data, { type: 'array' });
         
@@ -380,9 +380,26 @@ function handleExcelFile(file) {
         document.getElementById("lblDepartment").innerText = parsedInfo.department || "N/A";
         document.getElementById("lblPeriod").innerText = parsedInfo.period || "N/A";
 
+        // Show smooth parsing animation overlay
+        showLoader();
+        setLoaderStep("Reading spreadsheet sheets...", 25);
+        await delay(400);
+
+        setLoaderStep("Calibrating 180° multi-rater ratings...", 65);
+        await delay(400);
+
+        setLoaderStep("Synthesizing AI coaching suggestions...", 100);
+        await delay(350);
+        hideLoader();
+
         // Display Status card and editor accordion
         document.getElementById("statusCard").style.display = "block";
         document.getElementById("editorAccordion").style.display = "block";
+
+        // Compute AI Insights and show panel
+        if (typeof updateAiInsights === "function") {
+            updateAiInsights(parsedInfo.studentName);
+        }
 
         // Scroll to the status card smoothly
         document.getElementById("statusCard").scrollIntoView({ behavior: 'smooth' });
@@ -1166,4 +1183,410 @@ function renderBarChart(comp) {
 
         resolve(canvas.toDataURL('image/png'));
     });
+}
+
+/* =========================================================
+   AI Copilot, Suggestions Engine & Chatbot Logic
+   ========================================================= */
+
+// Collect current form data and calculate metrics for AI
+function getEvaluationMetrics() {
+    const studentName = document.getElementById("student_name")?.value || "Colleague";
+    const designation = document.getElementById("designation")?.value || "";
+    const department = document.getElementById("department")?.value || "";
+    const period = document.getElementById("period")?.value || "";
+
+    const competencyScores = [];
+
+    COMPETENCIES.forEach((comp, compIdx) => {
+        let selfSum = 0, superSum = 0, peerSum = 0;
+        const qCount = comp.questions.length;
+
+        comp.questions.forEach((q, qIdx) => {
+            const selfVal = parseFloat(document.querySelector(`input[name="score_${compIdx}_${qIdx}_0"]`)?.value) || 4;
+            const superVal = parseFloat(document.querySelector(`input[name="score_${compIdx}_${qIdx}_1"]`)?.value) || 4;
+            const p1 = parseFloat(document.querySelector(`input[name="score_${compIdx}_${qIdx}_2"]`)?.value) || 4;
+            const p2 = parseFloat(document.querySelector(`input[name="score_${compIdx}_${qIdx}_3"]`)?.value) || 4;
+            const p3 = parseFloat(document.querySelector(`input[name="score_${compIdx}_${qIdx}_4"]`)?.value) || 4;
+            const peerAvg = (p1 + p2 + p3) / 3;
+
+            selfSum += selfVal;
+            superSum += superVal;
+            peerSum += peerAvg;
+        });
+
+        const selfAvg = +(selfSum / qCount).toFixed(2);
+        const superAvg = +(superSum / qCount).toFixed(2);
+        const peerAvg = +(peerSum / qCount).toFixed(2);
+        const overallAvg = +((selfAvg + superAvg + peerAvg) / 3).toFixed(2);
+        const gap = +(superAvg - selfAvg).toFixed(2); // positive = supervisor rated higher, negative = self-inflation blindspot
+
+        competencyScores.push({
+            name: comp.name,
+            selfAvg,
+            superAvg,
+            peerAvg,
+            overallAvg,
+            gap
+        });
+    });
+
+    const sortedByOverall = [...competencyScores].sort((a, b) => b.overallAvg - a.overallAvg);
+    const sortedByGap = [...competencyScores].sort((a, b) => Math.abs(b.gap) - Math.abs(a.gap));
+    const highestGaps = sortedByGap.filter(c => Math.abs(c.gap) >= 0.5);
+
+    const strengths = sortedByOverall.slice(0, 3);
+    const opportunities = sortedByOverall.slice(-3).reverse();
+
+    return {
+        studentName,
+        designation,
+        department,
+        period,
+        competencyScores,
+        strengths,
+        opportunities,
+        highestGaps
+    };
+}
+
+// Update AI Insights cards in main dashboard
+window.updateAiInsights = function(studentName) {
+    const metrics = getEvaluationMetrics();
+    const insightsCard = document.getElementById("aiInsightsCard");
+    const grid = document.getElementById("insightsSummaryGrid");
+    if (!insightsCard || !grid) return;
+
+    insightsCard.style.display = "block";
+
+    const topStrength = metrics.strengths[0];
+    const topOpportunity = metrics.opportunities[0];
+    const topGap = metrics.highestGaps[0] || metrics.competencyScores[0];
+    const avgOverall = (metrics.competencyScores.reduce((acc, c) => acc + c.overallAvg, 0) / metrics.competencyScores.length).toFixed(2);
+
+    grid.innerHTML = `
+        <div class="insight-metric-card">
+            <div class="insight-metric-header">
+                <span class="insight-metric-title">Primary Strength</span>
+                <span class="insight-metric-tag tag-strength">Score: ${topStrength ? topStrength.overallAvg : 4.5}</span>
+            </div>
+            <div class="insight-metric-name">${topStrength ? topStrength.name : 'N/A'}</div>
+            <div class="insight-metric-desc">Consistently recognized across all evaluators (Supervisor: ${topStrength ? topStrength.superAvg : '-'}, Peers: ${topStrength ? topStrength.peerAvg : '-'}).</div>
+        </div>
+
+        <div class="insight-metric-card">
+            <div class="insight-metric-header">
+                <span class="insight-metric-title">Growth Priority</span>
+                <span class="insight-metric-tag tag-opportunity">Score: ${topOpportunity ? topOpportunity.overallAvg : 3.5}</span>
+            </div>
+            <div class="insight-metric-name">${topOpportunity ? topOpportunity.name : 'N/A'}</div>
+            <div class="insight-metric-desc">Greatest opportunity for targeted capability development and coaching focus.</div>
+        </div>
+
+        <div class="insight-metric-card">
+            <div class="insight-metric-header">
+                <span class="insight-metric-title">Perception Gap</span>
+                <span class="insight-metric-tag tag-gap">Delta: ${topGap ? Math.abs(topGap.gap) : 0.0}</span>
+            </div>
+            <div class="insight-metric-name">${topGap ? topGap.name : 'N/A'}</div>
+            <div class="insight-metric-desc">${topGap && topGap.gap < 0 ? 'Rated higher by Self than Supervisor (Potential Blind Spot).' : 'Rated higher by Supervisor than Self (Hidden Strength / Impostor tendency).'}</div>
+        </div>
+
+        <div class="insight-metric-card">
+            <div class="insight-metric-header">
+                <span class="insight-metric-title">Aggregate Benchmark</span>
+                <span class="insight-metric-tag tag-score">Overall 180°</span>
+            </div>
+            <div class="insight-metric-name">${avgOverall} / 5.00</div>
+            <div class="insight-metric-desc">Across all 10 core performance dimensions and evaluators.</div>
+        </div>
+    `;
+
+    // Notify user in chatbot if closed
+    const badge = document.getElementById("chatNotificationBadge");
+    if (badge) {
+        badge.innerText = "1";
+        badge.style.display = "inline-block";
+    }
+
+    addChatMessage("bot", `✅ <strong>Evaluation for ${studentName || 'Student'} parsed successfully!</strong><br><br>I've extracted scores for all 10 competencies and prepared insights. You can ask me to analyze strengths, blind spots, recommend growth actions, or say <strong>"create pdf"</strong> to compile the final report immediately.`);
+};
+
+// Chatbot UI controls
+window.toggleChatWidget = function() {
+    const chatWindow = document.getElementById("chatWindow");
+    const badge = document.getElementById("chatNotificationBadge");
+    if (!chatWindow) return;
+
+    chatWindow.classList.toggle("open");
+    if (chatWindow.classList.contains("open")) {
+        if (badge) badge.style.display = "none";
+        const input = document.getElementById("chatUserInput");
+        if (input) input.focus();
+    }
+};
+
+window.toggleChatFullscreen = function() {
+    const chatWindow = document.getElementById("chatWindow");
+    const btn = document.getElementById("chatFullscreenBtn");
+    if (!chatWindow) return;
+
+    // Ensure it is open
+    if (!chatWindow.classList.contains("open")) {
+        chatWindow.classList.add("open");
+    }
+
+    chatWindow.classList.toggle("fullscreen");
+    if (btn) {
+        btn.innerText = chatWindow.classList.contains("fullscreen") ? "🗗" : "⛶";
+        btn.title = chatWindow.classList.contains("fullscreen") ? "Exit Fullscreen" : "Toggle Fullscreen";
+    }
+};
+
+window.openChatWithPrompt = function(promptText) {
+    const chatWindow = document.getElementById("chatWindow");
+    if (chatWindow && !chatWindow.classList.contains("open")) {
+        chatWindow.classList.add("open");
+    }
+    const input = document.getElementById("chatUserInput");
+    if (input) {
+        input.value = promptText;
+        sendChatMessage();
+    }
+};
+
+window.clearChatHistory = function() {
+    const msgContainer = document.getElementById("chatMessages");
+    if (msgContainer) {
+        msgContainer.innerHTML = `
+            <div class="chat-bubble bot-bubble">
+                <div class="bubble-content">
+                    <strong>Chat history cleared. 🧹</strong><br>
+                    Upload an evaluation spreadsheet or ask me any question about performance suggestions!
+                </div>
+            </div>
+        `;
+    }
+};
+
+window.handleChatInputKey = function(e) {
+    if (e.key === "Enter") {
+        e.preventDefault();
+        sendChatMessage();
+    }
+};
+
+window.handleQuickChipClick = function(actionType) {
+    const chatWindow = document.getElementById("chatWindow");
+    if (chatWindow && !chatWindow.classList.contains("open")) {
+        chatWindow.classList.add("open");
+    }
+
+    if (actionType === 'analyze') {
+        openChatWithPrompt('Provide a full evaluation overview & scores breakdown');
+    } else if (actionType === 'strengths') {
+        openChatWithPrompt('What are my top strengths and key positive traits?');
+    } else if (actionType === 'weaknesses') {
+        openChatWithPrompt('What are my lowest areas and development suggestions?');
+    } else if (actionType === 'pdf') {
+        openChatWithPrompt('Generate PDF report now');
+    }
+};
+
+// Chat File Upload
+window.handleChatFileUpload = function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        addChatMessage("user", `📎 Uploaded file: <em>${file.name}</em>`);
+        addChatMessage("bot", `Processing <strong>${file.name}</strong>...`);
+        handleExcelFile(file);
+    }
+};
+
+// Show / remove animated typing bubble
+function showTypingIndicator() {
+    const container = document.getElementById("chatMessages");
+    if (!container) return null;
+
+    // Remove any existing typing indicator first
+    removeTypingIndicator();
+
+    const bubble = document.createElement("div");
+    bubble.className = "chat-bubble bot-bubble";
+    bubble.id = "activeTypingIndicator";
+    bubble.innerHTML = `
+        <div class="bubble-content typing-bubble">
+            <span class="typing-dot"></span>
+            <span class="typing-dot"></span>
+            <span class="typing-dot"></span>
+        </div>
+    `;
+    container.appendChild(bubble);
+    container.scrollTop = container.scrollHeight;
+}
+
+function removeTypingIndicator() {
+    const el = document.getElementById("activeTypingIndicator");
+    if (el) el.remove();
+}
+
+// Add chat bubble helper
+function addChatMessage(sender, htmlContent, actionBtnHtml = "") {
+    const container = document.getElementById("chatMessages");
+    if (!container) return;
+
+    removeTypingIndicator();
+
+    const bubble = document.createElement("div");
+    bubble.className = `chat-bubble ${sender}-bubble`;
+    bubble.innerHTML = `
+        <div class="bubble-content">
+            ${htmlContent}
+            ${actionBtnHtml}
+        </div>
+    `;
+    container.appendChild(bubble);
+    container.scrollTop = container.scrollHeight;
+}
+
+// Send chat message with smooth typing animation & pacing
+window.sendChatMessage = function() {
+    const input = document.getElementById("chatUserInput");
+    if (!input) return;
+    const text = input.value.trim();
+    if (!text) return;
+
+    // 1. User message bubble
+    addChatMessage("user", escapeHtml(text));
+    input.value = "";
+
+    // 2. Show typing animation
+    showTypingIndicator();
+
+    // 3. Realistic response delay based on complexity
+    const delayTime = Math.min(Math.max(text.length * 20, 650), 1200);
+
+    setTimeout(() => {
+        removeTypingIndicator();
+        processChatbotQuery(text);
+    }, delayTime);
+};
+
+function escapeHtml(str) {
+    return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+// Smart NLP Query Processor & Suggestion Engine
+function processChatbotQuery(query) {
+    const q = query.toLowerCase();
+    const metrics = getEvaluationMetrics();
+    const isDataLoaded = document.getElementById("statusCard").style.display !== "none";
+
+    // Action 1: Generate PDF trigger
+    if (q.includes("pdf") || q.includes("download") || q.includes("generate report") || q.includes("export pdf")) {
+        if (!isDataLoaded) {
+            addChatMessage("bot", "⚠️ <strong>No spreadsheet loaded yet.</strong><br>Please click the 📎 paperclip button below or drop your Excel file on the page first so I have data to compile into a PDF.");
+            return;
+        }
+        addChatMessage("bot", "📄 <strong>Generating your multi-page 180° PDF Report now...</strong><br>Compiling charts, executive summary, item analysis, and qualitative tables.", 
+            `<button class="chat-bubble-action-btn" onclick="generatePdfReport()">⬇️ Download PDF Again</button>`
+        );
+        generatePdfReport();
+        return;
+    }
+
+    // Action 2: Export Excel
+    if (q.includes("export excel") || q.includes("save excel") || q.includes("download excel") || q.includes("template")) {
+        downloadExcelTemplate();
+        addChatMessage("bot", "📁 <strong>Exporting current evaluation spreadsheet...</strong><br>Your Excel file has been compiled and downloaded.");
+        return;
+    }
+
+    // If data not loaded yet, guide user
+    if (!isDataLoaded && (q.includes("strength") || q.includes("weakness") || q.includes("score") || q.includes("summary") || q.includes("coach") || q.includes("blind spot"))) {
+        addChatMessage("bot", `💡 I'm ready to analyze your evaluation! Please upload your <strong>180° Evaluation Excel file</strong> first using the 📎 button or by dragging it onto the upload box.`);
+        return;
+    }
+
+    // Action 3: Top Strengths
+    if (q.includes("strength") || q.includes("best") || q.includes("high") || q.includes("good at")) {
+        let res = `⭐ <strong>Top 3 Core Strengths for ${metrics.studentName}:</strong><br><br>`;
+        metrics.strengths.forEach((s, idx) => {
+            res += `<strong>${idx + 1}. ${s.name}</strong> (Overall: <strong>${s.overallAvg} / 5</strong>)<br>`;
+            res += `• Self: ${s.selfAvg} | Supervisor: ${s.superAvg} | Peers: ${s.peerAvg}<br>`;
+            res += `• <em>Suggestion:</em> Leverage this as a cornerstone in high-visibility cross-functional initiatives and mentor peers in this area.<br><br>`;
+        });
+        addChatMessage("bot", res);
+        return;
+    }
+
+    // Action 4: Blind Spots / Gaps
+    if (q.includes("blind spot") || q.includes("gap") || q.includes("difference") || q.includes("perception")) {
+        let res = `🔍 <strong>Perception Gap & Blind Spot Analysis:</strong><br><br>`;
+        if (metrics.highestGaps.length === 0) {
+            res += `Great alignment! Self ratings and Supervisor ratings are closely calibrated with no major perception discrepancies (&gt;0.5 delta).`;
+        } else {
+            metrics.highestGaps.forEach(g => {
+                const diff = g.gap;
+                if (diff < 0) {
+                    res += `⚠️ <strong>${g.name} (Self: ${g.selfAvg} vs Boss: ${g.superAvg})</strong><br>`;
+                    res += `• <em>Blind Spot:</em> You rated yourself higher than your supervisor by ${(Math.abs(diff)).toFixed(2)} points. Discuss expectations and clarify concrete deliverables in your next 1-on-1.<br><br>`;
+                } else {
+                    res += `✨ <strong>${g.name} (Self: ${g.selfAvg} vs Boss: ${g.superAvg})</strong><br>`;
+                    res += `• <em>Hidden Strength:</em> Your supervisor rates you ${(diff).toFixed(2)} points higher than you rate yourself. Build confidence in this competency!<br><br>`;
+                }
+            });
+        }
+        addChatMessage("bot", res);
+        return;
+    }
+
+    // Action 5: Areas to Improve / Weaknesses / Action Plan
+    if (q.includes("weak") || q.includes("improve") || q.includes("low") || q.includes("growth") || q.includes("plan") || q.includes("action") || q.includes("30-day")) {
+        let res = `🎯 <strong>Priority Development Areas & 30-Day Growth Plan:</strong><br><br>`;
+        metrics.opportunities.forEach((op, idx) => {
+            res += `<strong>${idx + 1}. ${op.name}</strong> (Score: <strong>${op.overallAvg} / 5</strong>)<br>`;
+            res += `• <em>Immediate Action:</em> Focus on practical routines—set weekly milestone check-ins and seek proactive supervisor feedback.<br>`;
+            res += `• <em>Target:</em> Move rater alignment up from ${op.superAvg} (Boss) & ${op.peerAvg} (Peers).<br><br>`;
+        });
+        res += `💡 <em>Pro-Tip:</em> Add these development targets directly to your next performance appraisal cycle.`;
+        addChatMessage("bot", res);
+        return;
+    }
+
+    // Action 6: 1-on-1 Talking Points
+    if (q.includes("1-on-1") || q.includes("meeting") || q.includes("talk") || q.includes("supervisor") || q.includes("boss")) {
+        const topS = metrics.strengths[0];
+        const topO = metrics.opportunities[0];
+        let res = `🗣️ <strong>Recommended 1-on-1 Discussion Agenda with Supervisor:</strong><br><br>`;
+        res += `<strong>1. Celebrate Strengths:</strong> Discuss how to apply your strong capability in <em>"${topS ? topS.name : 'Key Competencies'}"</em> to upcoming team goals.<br><br>`;
+        res += `<strong>2. Align on Development:</strong> Request specific feedback and coaching opportunities in <em>"${topO ? topO.name : 'Focus Areas'}"</em>.<br><br>`;
+        res += `<strong>3. Feedback Cadence:</strong> Agree on monthly checkpoints to track behavioral progress.`;
+        addChatMessage("bot", res);
+        return;
+    }
+
+    // Action 7: Overall Summary / Scores Breakdown
+    if (q.includes("summary") || q.includes("score") || q.includes("breakdown") || q.includes("overview") || q.includes("all") || q.includes("hello") || q.includes("hi")) {
+        let res = `📊 <strong>180° Performance Profile for ${metrics.studentName}</strong><br>`;
+        res += `<em>${metrics.designation || 'Specialist'} - ${metrics.department || 'Department'} (${metrics.period || 'Period'})</em><br><br>`;
+        res += `<table><tr><th>Competency</th><th>Self</th><th>Boss</th><th>Peers</th><th>Total</th></tr>`;
+        metrics.competencyScores.forEach(c => {
+            res += `<tr><td>${c.name}</td><td>${c.selfAvg}</td><td>${c.superAvg}</td><td>${c.peerAvg}</td><td><strong>${c.overallAvg}</strong></td></tr>`;
+        });
+        res += `</table><br>`;
+        res += `Would you like me to compile this into the official PDF report or generate a customized improvement plan?`;
+        addChatMessage("bot", res, `<button class="chat-bubble-action-btn" onclick="generatePdfReport()">📄 Generate PDF Report</button>`);
+        return;
+    }
+
+    // Default Fallback Response
+    addChatMessage("bot", `I can assist you with your 180° evaluation! Here are things you can ask me:
+    <ul>
+        <li><em>"Give me my top strengths"</em></li>
+        <li><em>"Show my blind spots and perception gaps"</em></li>
+        <li><em>"What is my 30-day development action plan?"</em></li>
+        <li><em>"Generate talking points for meeting with supervisor"</em></li>
+        <li><em>"Generate PDF report"</em> (or click below)</li>
+    </ul>`, `<button class="chat-bubble-action-btn" onclick="generatePdfReport()">📄 Download PDF Report</button>`);
 }
