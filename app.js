@@ -718,22 +718,50 @@ window.generatePdfReport = async function() {
 
     doc.setFont("Helvetica", "bold");
     doc.setFontSize(12);
-    doc.text("Relationship Key / Color Codes", 15, 165);
+    doc.text("Relationship Key / Chart Legends", 15, 163);
+    doc.setFont("Helvetica", "normal");
+    doc.setFontSize(8.5);
+    doc.setTextColor(100, 116, 139);
+    doc.text("Color-coded and patterned for both digital display and black & white print recognition:", 15, 169);
 
+    // Self
     doc.setFillColor(...COLOR_SELF_RGB);
-    doc.rect(15, 175, 8, 8, "F");
+    doc.setDrawColor(154, 52, 18);
+    doc.rect(15, 175, 8, 8, "FD");
     doc.setTextColor(30, 41, 59);
     doc.setFont("Helvetica", "bold");
     doc.setFontSize(10);
-    doc.text("Self", 27, 181);
+    doc.text("Self", 26, 181);
+    doc.setFont("Helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(71, 85, 105);
+    doc.text("Solid Line / Solid Bar", 26, 186);
 
+    // Supervisor
     doc.setFillColor(...COLOR_SUPERVISOR_RGB);
-    doc.rect(45, 175, 8, 8, "F");
-    doc.text("Supervisor", 57, 181);
+    doc.setDrawColor(91, 33, 182);
+    doc.rect(75, 175, 8, 8, "FD");
+    doc.setTextColor(30, 41, 59);
+    doc.setFont("Helvetica", "bold");
+    doc.setFontSize(10);
+    doc.text("Supervisor", 86, 181);
+    doc.setFont("Helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(71, 85, 105);
+    doc.text("Dashed Line / Striped Bar", 86, 186);
 
+    // Peers
     doc.setFillColor(...COLOR_PEERS_RGB);
-    doc.rect(85, 175, 8, 8, "F");
-    doc.text("Peers", 97, 181);
+    doc.setDrawColor(6, 95, 70);
+    doc.rect(140, 175, 8, 8, "FD");
+    doc.setTextColor(30, 41, 59);
+    doc.setFont("Helvetica", "bold");
+    doc.setFontSize(10);
+    doc.text("Peers", 151, 181);
+    doc.setFont("Helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(71, 85, 105);
+    doc.text("Dotted Line / Dotted Bar", 151, 186);
     
     addHeaderFooter(doc, studentName, period);
 
@@ -1034,6 +1062,47 @@ window.generatePdfReport = async function() {
     hideLoader();
 };
 
+// Helper: Create striped/dotted pattern on canvas for B&W print compatibility
+function createChartPattern(type, color) {
+    const pCanvas = document.createElement("canvas");
+    const pCtx = pCanvas.getContext("2d");
+
+    if (type === 'diagonal-lines') {
+        // Diagonal stripes (Supervisor)
+        pCanvas.width = 12;
+        pCanvas.height = 12;
+        pCtx.fillStyle = color;
+        pCtx.fillRect(0, 0, 12, 12);
+        pCtx.strokeStyle = 'rgba(255, 255, 255, 0.75)';
+        pCtx.lineWidth = 3;
+        pCtx.beginPath();
+        pCtx.moveTo(-2, 14);
+        pCtx.lineTo(14, -2);
+        pCtx.moveTo(4, 20);
+        pCtx.lineTo(20, 4);
+        pCtx.moveTo(-8, 8);
+        pCtx.lineTo(8, -8);
+        pCtx.stroke();
+    } else if (type === 'dots') {
+        // Dotted pattern (Peers)
+        pCanvas.width = 10;
+        pCanvas.height = 10;
+        pCtx.fillStyle = color;
+        pCtx.fillRect(0, 0, 10, 10);
+        pCtx.fillStyle = '#ffffff';
+        pCtx.beginPath();
+        pCtx.arc(5, 5, 2.2, 0, Math.PI * 2);
+        pCtx.fill();
+    } else {
+        // Solid fill (Self)
+        pCanvas.width = 8;
+        pCanvas.height = 8;
+        pCtx.fillStyle = color;
+        pCtx.fillRect(0, 0, 8, 8);
+    }
+    return pCtx.createPattern(pCanvas, 'repeat');
+}
+
 // Render Chart.js Radar Chart
 function renderRadarChart(compAverages) {
     return new Promise((resolve) => {
@@ -1053,28 +1122,46 @@ function renderRadarChart(compAverages) {
                 labels: labels,
                 datasets: [
                     {
-                        label: 'Self',
+                        label: 'Self (Solid - Circle)',
                         data: selfData,
                         borderColor: HEX_SELF,
                         backgroundColor: 'rgba(249, 115, 22, 0.1)',
-                        borderWidth: 2,
-                        pointBackgroundColor: HEX_SELF
+                        borderWidth: 3,
+                        borderDash: [], // Solid line
+                        pointStyle: 'circle',
+                        pointRadius: 6,
+                        pointHoverRadius: 8,
+                        pointBackgroundColor: HEX_SELF,
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 1.5
                     },
                     {
-                        label: 'Supervisor',
+                        label: 'Supervisor (Dashed - Triangle)',
                         data: supervisorData,
                         borderColor: HEX_SUPERVISOR,
-                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
-                        borderWidth: 2,
-                        pointBackgroundColor: HEX_SUPERVISOR
+                        backgroundColor: 'rgba(139, 92, 246, 0.08)',
+                        borderWidth: 3,
+                        borderDash: [7, 5], // Dashed line
+                        pointStyle: 'triangle',
+                        pointRadius: 7,
+                        pointHoverRadius: 9,
+                        pointBackgroundColor: HEX_SUPERVISOR,
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 1.5
                     },
                     {
-                        label: 'Peers',
+                        label: 'Peers (Dotted - Square)',
                         data: peerData,
                         borderColor: HEX_PEERS,
-                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                        borderWidth: 2,
-                        pointBackgroundColor: HEX_PEERS
+                        backgroundColor: 'rgba(16, 185, 129, 0.08)',
+                        borderWidth: 3,
+                        borderDash: [2, 4], // Dotted line
+                        pointStyle: 'rectRot', // Diamond / rotated square
+                        pointRadius: 7,
+                        pointHoverRadius: 9,
+                        pointBackgroundColor: HEX_PEERS,
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 1.5
                     }
                 ]
             },
@@ -1104,7 +1191,9 @@ function renderRadarChart(compAverages) {
                         position: 'bottom',
                         labels: {
                             color: '#0f172a',
-                            font: { size: 12, weight: 'bold' }
+                            font: { size: 12, weight: 'bold' },
+                            usePointStyle: true,
+                            padding: 18
                         }
                     }
                 }
@@ -1128,25 +1217,36 @@ function renderBarChart(comp) {
         const supervisorData = comp.questions.map(q => q.supervisor);
         const peerData = comp.questions.map(q => q.peer_avg);
 
+        // Create fill patterns so B&W prints have distinct textures
+        const selfPattern = createChartPattern('solid', HEX_SELF);
+        const supervisorPattern = createChartPattern('diagonal-lines', HEX_SUPERVISOR);
+        const peerPattern = createChartPattern('dots', HEX_PEERS);
+
         new Chart(ctx, {
             type: 'bar',
             data: {
                 labels: labels,
                 datasets: [
                     {
-                        label: 'Self',
+                        label: 'Self (Solid)',
                         data: selfData,
-                        backgroundColor: HEX_SELF
+                        backgroundColor: selfPattern,
+                        borderColor: '#9a3412',
+                        borderWidth: 1.5
                     },
                     {
-                        label: 'Supervisor',
+                        label: 'Supervisor (Stripes)',
                         data: supervisorData,
-                        backgroundColor: HEX_SUPERVISOR
+                        backgroundColor: supervisorPattern,
+                        borderColor: '#5b21b6',
+                        borderWidth: 1.5
                     },
                     {
-                        label: 'Peers',
+                        label: 'Peers (Dots)',
                         data: peerData,
-                        backgroundColor: HEX_PEERS
+                        backgroundColor: peerPattern,
+                        borderColor: '#065f46',
+                        borderWidth: 1.5
                     }
                 ]
             },
@@ -1175,7 +1275,11 @@ function renderBarChart(comp) {
                     },
                     legend: {
                         position: 'top',
-                        labels: { color: '#475569' }
+                        labels: {
+                            color: '#475569',
+                            font: { size: 11, weight: 'bold' },
+                            padding: 14
+                        }
                     }
                 }
             }
