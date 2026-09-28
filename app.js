@@ -1041,6 +1041,7 @@ window.generatePdfReport = async function() {
     doc.text("Supervisor", 97.5, currY + 4.8, { align: "center" });
     doc.text("Peer", 117, currY + 4.8, { align: "center" });
     doc.text("Interpretation Summary", 127, currY + 4.8);
+    currY += 7;
 
     doc.setFont("Helvetica", "normal");
     doc.setFontSize(8.5);
