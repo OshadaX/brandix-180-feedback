@@ -628,49 +628,112 @@ window.generatePdfReport = async function() {
     doc.text("What is a 180 Degree Feedback Evaluation?", 15, 25);
     
     doc.setFont("Helvetica", "normal");
-    doc.setFontSize(10);
+    doc.setFontSize(10.5);
     doc.setTextColor(50, 50, 50);
     
-    let introTxt = "The 180 Feedback Evaluation is designed to give you meaningful insights into how you are " +
+    let introP1 = "The 180 Feedback Evaluation is designed to give you meaningful insights into how you are " +
         "perceived by the people you work most closely with, your peers and your supervisor. Unlike " +
         "a traditional review, which is often one-sided, this process allows you to see yourself " +
-        "through multiple perspectives. The goal is to:\n" +
-        "  - Help you recognise your strengths that contribute to the team's success.\n" +
-        "  - Identify areas where you can grow and develop further.\n" +
-        "  - Encourage you to embrace feedback as a tool for improvement.\n\n" +
-        "Feedback bridges the gap between how you think you work and how others experience your " +
-        "work. Understanding this difference can help you:\n" +
-        "  - Strengthen your relationships at work\n" +
-        "  - Adjust your communication and collaboration style for better results\n" +
-        "  - Align your efforts more closely with team and organizational goals\n\n" +
-        "Remember - This process isn't about pointing out faults. It's about giving you clarity, " +
-        "perspective, and the opportunity to take ownership of your growth in a supportive environment.";
-    doc.text(doc.splitTextToSize(introTxt, pageW - 30), 15, 35);
+        "through multiple perspectives. The goal is to:";
+    let splitP1 = doc.splitTextToSize(introP1, pageW - 30);
+    let introY = 35;
+    doc.text(splitP1, 15, introY);
+    introY += (splitP1.length * 5) + 4;
 
-    doc.setFont("Helvetica", "bold");
-    doc.setFontSize(14);
-    doc.setTextColor(30, 41, 59);
-    doc.text("Understanding Your Report", 15, 140);
-    
-    doc.setFont("Helvetica", "normal");
-    doc.setFontSize(10);
-    doc.setTextColor(50, 50, 50);
-    let underTxt = "Your multi-rater feedback report is broken into four sections. Each section is " +
-        "designed to present your results from a different perspective, in a way that " +
-        "assists your personal development:\n\n" +
-        "Section 01 - Overall Competency Summary shows your scores at a glance under each of " +
-        "the main competency headings, showing how your self-scores match up against the " +
-        "scores that your respondents gave.\n\n" +
-        "Section 02 - The individual competency detail section takes each competency in turn and " +
-        "analyses it in terms of your scores against each of the individual behavioural questions.\n\n" +
-        "Section 03 - The free text comments (Qualitative Feel) are that you and your respondents " +
-        "gave in response to the qualitative questions in the questionnaire.\n\n" +
-        "Section 04 - This segment highlights your strengths and development areas in terms of the " +
-        "importance and performance of the stated attributes.";
-    doc.text(doc.splitTextToSize(underTxt, pageW - 30), 15, 150);
+    const bullets1 = [
+        "Help you recognise your strengths that contribute to the team's success.",
+        "Identify areas where you can grow and develop further.",
+        "Encourage you to embrace feedback as a tool for improvement."
+    ];
+    bullets1.forEach(b => {
+        let wrappedB = doc.splitTextToSize(b, pageW - 40);
+        doc.text("•", 20, introY);
+        doc.text(wrappedB, 25, introY);
+        introY += (wrappedB.length * 5) + 3;
+    });
+    introY += 4;
+
+    let introP2 = "Feedback bridges the gap between how you think you work and how others experience your " +
+        "work. Understanding this difference can help you:";
+    let splitP2 = doc.splitTextToSize(introP2, pageW - 30);
+    doc.text(splitP2, 15, introY);
+    introY += (splitP2.length * 5) + 4;
+
+    const bullets2 = [
+        "Strengthen your relationships at work",
+        "Adjust your communication and collaboration style for better results",
+        "Align your efforts more closely with team and organizational goals"
+    ];
+    bullets2.forEach(b => {
+        let wrappedB = doc.splitTextToSize(b, pageW - 40);
+        doc.text("•", 20, introY);
+        doc.text(wrappedB, 25, introY);
+        introY += (wrappedB.length * 5) + 3;
+    });
+    introY += 4;
+
+    let introP3 = "Remember - This process isn't about pointing out faults. It's about giving you clarity, " +
+        "perspective, and the opportunity to take ownership of your growth in a supportive environment.";
+    let splitP3 = doc.splitTextToSize(introP3, pageW - 30);
+    doc.text(splitP3, 15, introY);
+
     addHeaderFooter(doc, studentName, period);
 
-    // PAGE 3: SCORING SYSTEM
+    // PAGE 3: UNDERSTANDING YOUR REPORT
+    doc.addPage();
+    doc.setFont("Helvetica", "bold");
+    doc.setFontSize(18);
+    doc.setTextColor(30, 41, 59);
+    doc.text("Understanding Your Report", 15, 25);
+    
+    doc.setFont("Helvetica", "normal");
+    doc.setFontSize(10.5);
+    doc.setTextColor(50, 50, 50);
+    let underTxtIntro = "Your multi-rater feedback report is broken into four sections. Each section is " +
+        "designed to present your results from a different perspective, in a way that " +
+        "assists your personal development:";
+    let splitUnderIntro = doc.splitTextToSize(underTxtIntro, pageW - 30);
+    let underY = 35;
+    doc.text(splitUnderIntro, 15, underY);
+    underY += (splitUnderIntro.length * 5) + 8;
+
+    const sectionsInfo = [
+        {
+            title: "Section 01 - Overall Competency Summary",
+            desc: "Shows your scores at a glance under each of the main competency headings, showing how your self-scores match up against the scores that your respondents gave."
+        },
+        {
+            title: "Section 02 - Individual Competency Analysis",
+            desc: "Takes each competency in turn and analyses it in terms of your scores against each of the individual behavioural questions."
+        },
+        {
+            title: "Section 03 - Qualitative Feedback",
+            desc: "Presents the free text comments that you and your respondents gave in response to the qualitative open-ended questions."
+        },
+        {
+            title: "Section 04 - Interpretation & Summary",
+            desc: "Highlights your key strengths and development areas in terms of importance, perception gaps, and prioritized action areas."
+        }
+    ];
+
+    sectionsInfo.forEach(sec => {
+        doc.setFont("Helvetica", "bold");
+        doc.setFontSize(11);
+        doc.setTextColor(30, 41, 59);
+        doc.text(sec.title, 15, underY);
+        underY += 6;
+
+        doc.setFont("Helvetica", "normal");
+        doc.setFontSize(10);
+        doc.setTextColor(70, 70, 70);
+        let splitDesc = doc.splitTextToSize(sec.desc, pageW - 30);
+        doc.text(splitDesc, 15, underY);
+        underY += (splitDesc.length * 5) + 7;
+    });
+
+    addHeaderFooter(doc, studentName, period);
+
+    // PAGE 4: SCORING SYSTEM
     doc.addPage();
     doc.setFont("Helvetica", "bold");
     doc.setFontSize(18);
@@ -684,12 +747,16 @@ window.generatePdfReport = async function() {
     doc.text("choice questions using a five-point scale to evaluate performance. The chart", 15, 41);
     doc.text("below shows the scale as per the questionnaires.", 15, 47);
 
+    // Outer and header border styling for Scoring System table
+    doc.setDrawColor(180, 180, 180);
+    doc.setLineWidth(0.3);
     doc.setFont("Helvetica", "bold");
+    doc.setFontSize(9.5);
     doc.setFillColor(240, 240, 240);
-    doc.rect(15, 58, 30, 8, "FD");
-    doc.rect(45, 58, 70, 8, "FD");
-    doc.text("Scale Score", 20, 63);
-    doc.text("Performance Rating", 50, 63);
+    doc.rect(15, 56, 35, 8, "FD");
+    doc.rect(50, 56, 75, 8, "FD");
+    doc.text("Scale Score", 32.5, 61.5, { align: "center" });
+    doc.text("Performance Rating", 55, 61.5);
 
     const scale = [
         ["1", "Strongly Disagree"],
@@ -699,12 +766,13 @@ window.generatePdfReport = async function() {
         ["5", "Strongly Agree"]
     ];
     doc.setFont("Helvetica", "normal");
+    doc.setFontSize(9.5);
     scale.forEach((item, idx) => {
-        const y = 66 + (idx * 8);
-        doc.rect(15, y, 30, 8);
-        doc.rect(45, y, 70, 8);
-        doc.text(item[0], 20, y + 5);
-        doc.text(item[1], 50, y + 5);
+        const y = 64 + (idx * 8);
+        doc.rect(15, y, 35, 8);
+        doc.rect(50, y, 75, 8);
+        doc.text(item[0], 32.5, y + 5.5, { align: "center" });
+        doc.text(item[1], 55, y + 5.5);
     });
 
     doc.setFont("Helvetica", "bold");
@@ -812,9 +880,9 @@ window.generatePdfReport = async function() {
         doc.rect(135, tableY, 25, 6, "FD");
         doc.rect(160, tableY, 20, 6, "FD");
         doc.text("Behavioural Question", 17, tableY + 4.5);
-        doc.text("Self", 121, tableY + 4.5);
-        doc.text("Supervisor", 137, tableY + 4.5);
-        doc.text("Peers", 166, tableY + 4.5);
+        doc.text("Self", 125, tableY + 4.5, { align: "center" });
+        doc.text("Supervisor", 147.5, tableY + 4.5, { align: "center" });
+        doc.text("Peers", 170, tableY + 4.5, { align: "center" });
 
         doc.setFont("Helvetica", "normal");
         comp.questions.forEach((row, qIdx) => {
@@ -824,9 +892,9 @@ window.generatePdfReport = async function() {
             doc.rect(135, rowY, 25, 6);
             doc.rect(160, rowY, 20, 6);
             doc.text(`Q${qIdx + 1}`, 17, rowY + 4.5);
-            doc.text(row.self.toFixed(2), 121, rowY + 4.5);
-            doc.text(row.supervisor.toFixed(2), 137, rowY + 4.5);
-            doc.text(row.peer_avg.toFixed(2), 166, rowY + 4.5);
+            doc.text(row.self.toFixed(2), 125, rowY + 4.5, { align: "center" });
+            doc.text(row.supervisor.toFixed(2), 147.5, rowY + 4.5, { align: "center" });
+            doc.text(row.peer_avg.toFixed(2), 170, rowY + 4.5, { align: "center" });
         });
 
         addHeaderFooter(doc, studentName, period);
@@ -963,16 +1031,16 @@ window.generatePdfReport = async function() {
     doc.setFont("Helvetica", "bold");
     doc.setFontSize(8.5);
     doc.setFillColor(240, 240, 240);
-    doc.rect(15, currY, 60, 7, "FD");
-    doc.rect(75, currY, 15, 7, "FD");
-    doc.rect(90, currY, 20, 7, "FD");
-    doc.rect(110, currY, 15, 7, "FD");
+    doc.rect(15, currY, 55, 7, "FD");
+    doc.rect(70, currY, 16, 7, "FD");
+    doc.rect(86, currY, 23, 7, "FD");
+    doc.rect(109, currY, 16, 7, "FD");
     doc.rect(125, currY, 70, 7, "FD");
-    doc.text("Competency", 17, currY + 5);
-    doc.text("Self", 78, currY + 5);
-    doc.text("Supervisor", 92, currY + 5);
-    doc.text("Peer", 112, currY + 5);
-    doc.text("Interpretation Summary", 127, currY + 5);
+    doc.text("Competency", 17, currY + 4.8);
+    doc.text("Self", 78, currY + 4.8, { align: "center" });
+    doc.text("Supervisor", 97.5, currY + 4.8, { align: "center" });
+    doc.text("Peer", 117, currY + 4.8, { align: "center" });
+    doc.text("Interpretation Summary", 127, currY + 4.8);
 
     doc.setFont("Helvetica", "normal");
     doc.setFontSize(8.5);
@@ -998,7 +1066,7 @@ window.generatePdfReport = async function() {
         }
 
         // Wrap competency name and interpretation to get correct line counts
-        const wrappedComp = doc.splitTextToSize(comp.name, 56);
+        const wrappedComp = doc.splitTextToSize(comp.name, 51);
         const wrappedInterp = doc.splitTextToSize(interpretation, 66);
         const lineHeight = 4.5;
         const padding = 4;
@@ -1013,16 +1081,16 @@ window.generatePdfReport = async function() {
             // Redraw table header on new page
             doc.setFont("Helvetica", "bold");
             doc.setFillColor(240, 240, 240);
-            doc.rect(15, currY, 60, 7, "FD");
-            doc.rect(75, currY, 15, 7, "FD");
-            doc.rect(90, currY, 20, 7, "FD");
-            doc.rect(110, currY, 15, 7, "FD");
+            doc.rect(15, currY, 55, 7, "FD");
+            doc.rect(70, currY, 16, 7, "FD");
+            doc.rect(86, currY, 23, 7, "FD");
+            doc.rect(109, currY, 16, 7, "FD");
             doc.rect(125, currY, 70, 7, "FD");
-            doc.text("Competency", 17, currY + 5);
-            doc.text("Self", 78, currY + 5);
-            doc.text("Supervisor", 92, currY + 5);
-            doc.text("Peer", 112, currY + 5);
-            doc.text("Interpretation Summary", 127, currY + 5);
+            doc.text("Competency", 17, currY + 4.8);
+            doc.text("Self", 78, currY + 4.8, { align: "center" });
+            doc.text("Supervisor", 97.5, currY + 4.8, { align: "center" });
+            doc.text("Peer", 117, currY + 4.8, { align: "center" });
+            doc.text("Interpretation Summary", 127, currY + 4.8);
             doc.setFont("Helvetica", "normal");
             currY += 7;
         } else {
@@ -1031,17 +1099,17 @@ window.generatePdfReport = async function() {
 
         // Draw cell borders with dynamic height
         doc.setDrawColor(180, 180, 180);
-        doc.rect(15, currY, 60, rowH);
-        doc.rect(75, currY, 15, rowH);
-        doc.rect(90, currY, 20, rowH);
-        doc.rect(110, currY, 15, rowH);
+        doc.rect(15, currY, 55, rowH);
+        doc.rect(70, currY, 16, rowH);
+        doc.rect(86, currY, 23, rowH);
+        doc.rect(109, currY, 16, rowH);
         doc.rect(125, currY, 70, rowH);
 
         // Fill cell text vertically centered
         const textTop = currY + padding;
         doc.text(wrappedComp, 17, textTop);
-        doc.text(comp.self.toFixed(2), 82, currY + rowH / 2 + 1.5, { align: "center" });
-        doc.text(comp.supervisor.toFixed(2), 100, currY + rowH / 2 + 1.5, { align: "center" });
+        doc.text(comp.self.toFixed(2), 78, currY + rowH / 2 + 1.5, { align: "center" });
+        doc.text(comp.supervisor.toFixed(2), 97.5, currY + rowH / 2 + 1.5, { align: "center" });
         doc.text(comp.peer_avg.toFixed(2), 117, currY + rowH / 2 + 1.5, { align: "center" });
         doc.text(wrappedInterp, 127, textTop);
 
