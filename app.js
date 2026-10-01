@@ -1006,22 +1006,44 @@ window.generatePdfReport = async function() {
     }
     currY += 3;
 
+    // Development Areas - calculate content height first
+    const devLines = developments.length > 0
+        ? developments.slice(0, 5)
+        : [null]; // placeholder for 1 line
+    const devBoxPadding = 4;
+    const devLineCount = devLines.length;
+    const devBoxH = 7 + devLineCount * 5 + devBoxPadding * 2;
+
+    // Draw highlighted box background
+    doc.setFillColor(255, 251, 235); // amber-50 background
+    doc.setDrawColor(217, 119, 6);   // amber border color
+    doc.setLineWidth(0.6);
+    doc.roundedRect(13, currY - 2, pageW - 26, devBoxH, 2, 2, "FD");
+    doc.setLineWidth(0.3); // reset
+
+    // Left accent bar
+    doc.setFillColor(217, 119, 6);
+    doc.rect(13, currY - 2, 3, devBoxH, "F");
+
     doc.setFont("Helvetica", "bold");
     doc.setFontSize(11);
-    doc.text("Development Areas Identified", 15, currY);
-    currY += 5;
+    doc.setTextColor(146, 64, 14); // amber-800
+    doc.text("Development Areas Identified", 20, currY + 5);
+    currY += 5 + devBoxPadding;
     doc.setFont("Helvetica", "normal");
     doc.setFontSize(9.5);
+    doc.setTextColor(50, 50, 50);
     if (developments.length > 0) {
         developments.slice(0, 5).forEach(dev => {
-            doc.text(`  - ${dev} - Potential growth area based on evaluation ratings.`, 15, currY);
+            doc.text(`  - ${dev} - Potential growth area based on evaluation ratings.`, 20, currY);
             currY += 5;
         });
     } else {
-        doc.text("  - Refer to qualitative comments for areas to prioritize.", 15, currY);
+        doc.text("  - Refer to qualitative comments for areas to prioritize.", 20, currY);
         currY += 5;
     }
-    currY += 6;
+    doc.setTextColor(30, 41, 59); // reset text color
+    currY += devBoxPadding + 4;
 
     doc.setFont("Helvetica", "bold");
     doc.setFontSize(11);
@@ -1081,7 +1103,9 @@ window.generatePdfReport = async function() {
             currY = 20;
             // Redraw table header on new page
             doc.setFont("Helvetica", "bold");
+            doc.setFontSize(8.5);
             doc.setFillColor(240, 240, 240);
+            doc.setDrawColor(180, 180, 180);
             doc.rect(15, currY, 55, 7, "FD");
             doc.rect(70, currY, 16, 7, "FD");
             doc.rect(86, currY, 23, 7, "FD");
@@ -1093,6 +1117,7 @@ window.generatePdfReport = async function() {
             doc.text("Peer", 117, currY + 4.8, { align: "center" });
             doc.text("Interpretation Summary", 127, currY + 4.8);
             doc.setFont("Helvetica", "normal");
+            doc.setFontSize(8.5);
             currY += 7;
         } else {
             currY += 0;
