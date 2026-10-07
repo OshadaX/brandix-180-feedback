@@ -872,29 +872,37 @@ window.generatePdfReport = async function() {
             doc.addImage(imgData, "PNG", 20, currY + 4, 170, 85);
         }
 
+        // Table column layout (all widths in mm, starting at x=15)
+        // Col1: "Behavioural Question" — just wide enough for header text
+        // Col2: Self (25), Col3: Supervisor (30), Col4: Peers (25)
+        const tCol1X = 15,  tCol1W = 50;
+        const tCol2X = 65,  tCol2W = 25;
+        const tCol3X = 90,  tCol3W = 30;
+        const tCol4X = 120, tCol4W = 25;
+
         let tableY = currY + 95;
         doc.setFont("Helvetica", "bold");
         doc.setFillColor(240, 240, 240);
-        doc.rect(15, tableY, 100, 6, "FD");
-        doc.rect(115, tableY, 20, 6, "FD");
-        doc.rect(135, tableY, 25, 6, "FD");
-        doc.rect(160, tableY, 20, 6, "FD");
-        doc.text("Behavioural Question", 17, tableY + 4.5);
-        doc.text("Self", 125, tableY + 4.5, { align: "center" });
-        doc.text("Supervisor", 147.5, tableY + 4.5, { align: "center" });
-        doc.text("Peers", 170, tableY + 4.5, { align: "center" });
+        doc.rect(tCol1X, tableY, tCol1W, 6, "FD");
+        doc.rect(tCol2X, tableY, tCol2W, 6, "FD");
+        doc.rect(tCol3X, tableY, tCol3W, 6, "FD");
+        doc.rect(tCol4X, tableY, tCol4W, 6, "FD");
+        doc.text("Behavioural Question", tCol1X + 2, tableY + 4.5);
+        doc.text("Self",       tCol2X + tCol2W / 2, tableY + 4.5, { align: "center" });
+        doc.text("Supervisor", tCol3X + tCol3W / 2, tableY + 4.5, { align: "center" });
+        doc.text("Peers",      tCol4X + tCol4W / 2, tableY + 4.5, { align: "center" });
 
         doc.setFont("Helvetica", "normal");
         comp.questions.forEach((row, qIdx) => {
             const rowY = tableY + 6 + (qIdx * 6);
-            doc.rect(15, rowY, 100, 6);
-            doc.rect(115, rowY, 20, 6);
-            doc.rect(135, rowY, 25, 6);
-            doc.rect(160, rowY, 20, 6);
-            doc.text(`Q${qIdx + 1}`, 17, rowY + 4.5);
-            doc.text(row.self.toFixed(2), 125, rowY + 4.5, { align: "center" });
-            doc.text(row.supervisor.toFixed(2), 147.5, rowY + 4.5, { align: "center" });
-            doc.text(row.peer_avg.toFixed(2), 170, rowY + 4.5, { align: "center" });
+            doc.rect(tCol1X, rowY, tCol1W, 6);
+            doc.rect(tCol2X, rowY, tCol2W, 6);
+            doc.rect(tCol3X, rowY, tCol3W, 6);
+            doc.rect(tCol4X, rowY, tCol4W, 6);
+            doc.text(`Q${qIdx + 1}`, tCol1X + 2, rowY + 4.5);
+            doc.text(row.self.toFixed(2),       tCol2X + tCol2W / 2, rowY + 4.5, { align: "center" });
+            doc.text(row.supervisor.toFixed(2), tCol3X + tCol3W / 2, rowY + 4.5, { align: "center" });
+            doc.text(row.peer_avg.toFixed(2),   tCol4X + tCol4W / 2, rowY + 4.5, { align: "center" });
         });
 
         addHeaderFooter(doc, studentName, period);
@@ -1210,18 +1218,22 @@ function renderRadarChart(compAverages) {
         const supervisorData = compAverages.map(c => c.supervisor);
         const peerData = compAverages.map(c => c.peer_avg);
 
+        const supervisorDash = [7, 5];
+        const peerDash = [2, 4];
+
         new Chart(ctx, {
             type: 'radar',
             data: {
                 labels: labels,
                 datasets: [
                     {
-                        label: 'Self (Solid - Circle)',
+                        label: 'Self (Solid)',
                         data: selfData,
                         borderColor: HEX_SELF,
                         backgroundColor: 'rgba(249, 115, 22, 0.1)',
                         borderWidth: 3,
-                        borderDash: [], // Solid line
+                        borderDash: [],
+                        segment: { borderDash: () => [] },
                         pointStyle: 'circle',
                         pointRadius: 6,
                         pointHoverRadius: 8,
@@ -1230,12 +1242,13 @@ function renderRadarChart(compAverages) {
                         pointBorderWidth: 1.5
                     },
                     {
-                        label: 'Supervisor (Dashed - Triangle)',
+                        label: 'Supervisor (Dashed)',
                         data: supervisorData,
                         borderColor: HEX_SUPERVISOR,
                         backgroundColor: 'rgba(139, 92, 246, 0.08)',
                         borderWidth: 3,
-                        borderDash: [7, 5], // Dashed line
+                        borderDash: supervisorDash,
+                        segment: { borderDash: () => supervisorDash },
                         pointStyle: 'triangle',
                         pointRadius: 7,
                         pointHoverRadius: 9,
@@ -1244,13 +1257,14 @@ function renderRadarChart(compAverages) {
                         pointBorderWidth: 1.5
                     },
                     {
-                        label: 'Peers (Dotted - Square)',
+                        label: 'Peers (Dotted)',
                         data: peerData,
                         borderColor: HEX_PEERS,
                         backgroundColor: 'rgba(16, 185, 129, 0.08)',
                         borderWidth: 3,
-                        borderDash: [2, 4], // Dotted line
-                        pointStyle: 'rectRot', // Diamond / rotated square
+                        borderDash: peerDash,
+                        segment: { borderDash: () => peerDash },
+                        pointStyle: 'rectRot',
                         pointRadius: 7,
                         pointHoverRadius: 9,
                         pointBackgroundColor: HEX_PEERS,
@@ -1261,7 +1275,12 @@ function renderRadarChart(compAverages) {
             },
             options: {
                 responsive: false,
-                animation: false,
+                animation: {
+                    duration: 0,
+                    onComplete: () => {
+                        resolve(canvas.toDataURL('image/png'));
+                    }
+                },
                 scales: {
                     r: {
                         angleLines: { color: '#cbd5e1' },
@@ -1293,8 +1312,6 @@ function renderRadarChart(compAverages) {
                 }
             }
         });
-
-        resolve(canvas.toDataURL('image/png'));
     });
 }
 
@@ -1325,28 +1342,33 @@ function renderBarChart(comp) {
                         label: 'Self (Solid)',
                         data: selfData,
                         backgroundColor: selfPattern,
-                        borderColor: '#9a3412',
+                        borderColor: HEX_SELF,
                         borderWidth: 1.5
                     },
                     {
-                        label: 'Supervisor (Stripes)',
+                        label: 'Supervisor (Striped)',
                         data: supervisorData,
                         backgroundColor: supervisorPattern,
-                        borderColor: '#5b21b6',
+                        borderColor: HEX_SUPERVISOR,
                         borderWidth: 1.5
                     },
                     {
-                        label: 'Peers (Dots)',
+                        label: 'Peers (Dotted)',
                         data: peerData,
                         backgroundColor: peerPattern,
-                        borderColor: '#065f46',
+                        borderColor: HEX_PEERS,
                         borderWidth: 1.5
                     }
                 ]
             },
             options: {
                 responsive: false,
-                animation: false,
+                animation: {
+                    duration: 0,
+                    onComplete: () => {
+                        resolve(canvas.toDataURL('image/png'));
+                    }
+                },
                 scales: {
                     y: {
                         beginAtZero: true,
@@ -1372,14 +1394,20 @@ function renderBarChart(comp) {
                         labels: {
                             color: '#475569',
                             font: { size: 11, weight: 'bold' },
-                            padding: 14
+                            padding: 14,
+                            generateLabels: (chart) => {
+                                // Show color swatch using actual bar color (not pattern)
+                                return [
+                                    { text: 'Self (Solid)',       fillStyle: HEX_SELF,       strokeStyle: HEX_SELF,       lineWidth: 1, hidden: false, datasetIndex: 0 },
+                                    { text: 'Supervisor (Striped)', fillStyle: HEX_SUPERVISOR, strokeStyle: HEX_SUPERVISOR, lineWidth: 1, hidden: false, datasetIndex: 1 },
+                                    { text: 'Peers (Dotted)',     fillStyle: HEX_PEERS,      strokeStyle: HEX_PEERS,      lineWidth: 1, hidden: false, datasetIndex: 2 }
+                                ];
+                            }
                         }
                     }
                 }
             }
         });
-
-        resolve(canvas.toDataURL('image/png'));
     });
 }
 
