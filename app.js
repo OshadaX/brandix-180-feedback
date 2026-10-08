@@ -792,10 +792,15 @@ window.generatePdfReport = async function() {
     doc.setTextColor(100, 116, 139);
     doc.text("Color-coded and patterned for both digital display and black & white print recognition:", 15, 169);
 
-    // Self
+    // --- Self swatch: solid orange fill + solid line sample ---
     doc.setFillColor(...COLOR_SELF_RGB);
     doc.setDrawColor(154, 52, 18);
     doc.rect(15, 175, 8, 8, "FD");
+    // Solid line sample (thick solid line beside the swatch)
+    doc.setDrawColor(...COLOR_SELF_RGB);
+    doc.setLineWidth(1.2);
+    doc.line(15, 196, 23, 196);
+    doc.setLineWidth(0.4); // reset
     doc.setTextColor(30, 41, 59);
     doc.setFont("Helvetica", "bold");
     doc.setFontSize(10);
@@ -805,10 +810,30 @@ window.generatePdfReport = async function() {
     doc.setTextColor(71, 85, 105);
     doc.text("Solid Line / Solid Bar", 26, 186);
 
-    // Supervisor
+    // --- Supervisor swatch: purple fill + diagonal stripes + dashed line sample ---
     doc.setFillColor(...COLOR_SUPERVISOR_RGB);
     doc.setDrawColor(91, 33, 182);
     doc.rect(75, 175, 8, 8, "FD");
+    // Overlay diagonal stripe lines (white, semi-opaque effect via repeated thin lines)
+    doc.setDrawColor(255, 255, 255);
+    doc.setLineWidth(0.7);
+    // Draw diagonal stripes clipped to the swatch (75,175)–(83,183)
+    for (let offset = -8; offset <= 16; offset += 2.5) {
+        const x1 = 75 + offset, y1 = 175;
+        const x2 = 75 + offset + 8, y2 = 183;
+        // clip to swatch box
+        const cx1 = Math.max(x1, 75), cy1 = y1 + Math.max(0, 75 - x1);
+        const cx2 = Math.min(x2, 83), cy2 = y2 - Math.max(0, x2 - 83);
+        if (cx1 < cx2) doc.line(cx1, cy1, cx2, cy2);
+    }
+    doc.setLineWidth(0.4); // reset
+    // Dashed line sample
+    doc.setDrawColor(...COLOR_SUPERVISOR_RGB);
+    doc.setLineWidth(1.2);
+    doc.setLineDashPattern([2, 1.5], 0);
+    doc.line(75, 196, 83, 196);
+    doc.setLineDashPattern([], 0); // reset to solid
+    doc.setLineWidth(0.4);
     doc.setTextColor(30, 41, 59);
     doc.setFont("Helvetica", "bold");
     doc.setFontSize(10);
@@ -818,10 +843,25 @@ window.generatePdfReport = async function() {
     doc.setTextColor(71, 85, 105);
     doc.text("Dashed Line / Striped Bar", 86, 186);
 
-    // Peers
+    // --- Peers swatch: green fill + dotted pattern + dotted line sample ---
     doc.setFillColor(...COLOR_PEERS_RGB);
     doc.setDrawColor(6, 95, 70);
     doc.rect(140, 175, 8, 8, "FD");
+    // Overlay dot grid (white dots) on the swatch
+    doc.setFillColor(255, 255, 255);
+    doc.setDrawColor(255, 255, 255);
+    for (let dx = 1.5; dx < 8; dx += 2.2) {
+        for (let dy = 1.5; dy < 8; dy += 2.2) {
+            doc.circle(140 + dx, 175 + dy, 0.45, "F");
+        }
+    }
+    // Dotted line sample
+    doc.setDrawColor(...COLOR_PEERS_RGB);
+    doc.setLineWidth(1.2);
+    doc.setLineDashPattern([0.5, 1.5], 0);
+    doc.line(140, 196, 148, 196);
+    doc.setLineDashPattern([], 0); // reset
+    doc.setLineWidth(0.4);
     doc.setTextColor(30, 41, 59);
     doc.setFont("Helvetica", "bold");
     doc.setFontSize(10);
