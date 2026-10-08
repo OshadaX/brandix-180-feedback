@@ -1025,16 +1025,24 @@ window.generatePdfReport = async function() {
     let currY = 33 + (wrappedIntro.length * 4.5) + 6;
 
     const strengths = [];
-    const developments = [];
 
-    compAverages.forEach(comp => {
-        const othersAvg = (comp.supervisor + comp.peer_avg) / 2;
-        if (othersAvg >= 4.0) {
-            strengths.push(`${comp.name} (Score: ${othersAvg.toFixed(2)})`);
-        } else if (othersAvg < 3.8) {
-            developments.push(`${comp.name} (Score: ${othersAvg.toFixed(2)})`);
+    // Sort all competencies by others' average (Supervisor + Peers), highest first
+    const sortedByOthersAvg = [...compAverages].map(comp => ({
+        ...comp,
+        othersAvg: (comp.supervisor + comp.peer_avg) / 2
+    })).sort((a, b) => b.othersAvg - a.othersAvg);
+
+    // Strengths = top competencies (others avg >= 4.0)
+    sortedByOthersAvg.forEach(comp => {
+        if (comp.othersAvg >= 4.0) {
+            strengths.push(`${comp.name} (Score: ${comp.othersAvg.toFixed(2)})`);
         }
     });
+
+    // Development Areas = always the 3 lowest scoring competencies
+    const developments = sortedByOthersAvg.slice(-3).reverse().map(comp =>
+        `${comp.name} (Score: ${comp.othersAvg.toFixed(2)})`
+    );
 
     doc.setFont("Helvetica", "bold");
     doc.setFontSize(11);
